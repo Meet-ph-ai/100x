@@ -5,7 +5,8 @@ import base64
 from groq import Groq
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
-from edge_tts
+import edge_tts
+import asyncio
 from audio_recorder_streamlit import audio_recorder
 import tempfile
 
