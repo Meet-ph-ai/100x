@@ -19,7 +19,7 @@ st.set_page_config(
 
 # --- SECURITY & SETUP ---
 # For local testing, replace this with your actual key if not using secrets
-groq_api_key = os.getenv("GROQ_API_KEY")
+groq_api_key = "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"
 
 if not groq_api_key:
     # Fallback for the user to input key if not found
