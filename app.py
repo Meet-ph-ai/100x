@@ -5,7 +5,7 @@ import base64
 from groq import Groq
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
-from gtts import gTTS
+from edge_tts
 from audio_recorder_streamlit import audio_recorder
 import tempfile
 
