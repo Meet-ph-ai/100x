@@ -1,0 +1,10 @@
+streamlit
+langchain
+langchain-core
+langchain-groq
+groq
+edge-tts
+audio-recorder-streamlit
+python-dotenv
+asyncio
+streamlit-mic-recorder
