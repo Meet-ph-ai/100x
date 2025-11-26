@@ -195,10 +195,28 @@ def get_ai_response(text_input):
     return response.content
 
 def text_to_speech(text):
-    tts = gTTS(text=text, lang='en', tld='co.in', slow=False)  # Indian English
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as fp:
-        tts.save(fp.name)
-        return fp.name
+    """Convert text to speech using edge-tts with male Indian voice"""
+    async def generate_speech():
+        # Use a male Indian English voice
+        voice = "en-IN-PrabhatNeural"  # Male Indian voice
+        # Alternative options:
+        # "en-IN-PrabhatNeural" - Male Indian voice (confident)
+        # "en-US-AriaNeural" - Female US (if you want to test)
+        
+        communicate = edge_tts.Communicate(text, voice)
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as fp:
+            await communicate.save(fp.name)
+            return fp.name
+    
+    # Run the async function
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        audio_file = loop.run_until_complete(generate_speech())
+        return audio_file
+    finally:
+        loop.close()
 
 def autoplay_audio(file_path, ai_response, caption_placeholder):
     try:
