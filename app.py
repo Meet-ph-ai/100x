@@ -19,14 +19,7 @@ st.set_page_config(
 
 # --- SECURITY & SETUP ---
 # For local testing, replace this with your actual key if not using secrets
-try:
-    groq_api_key = st.secrets["GROQ_API_KEY"]
-except KeyError:
-    # Fallback for local development or if secret is not set
-    groq_api_key = st.text_input("Enter Groq API Key:", type="password")
-    if not groq_api_key:
-        st.warning("Please provide an API Key to continue.")
-        st.stop()
+groq_api_key = st.secrets.get("GROQ_API_KEY", None)
         
 if not groq_api_key:
     # Fallback for the user to input key if not found
