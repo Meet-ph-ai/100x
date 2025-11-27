@@ -5,8 +5,7 @@ import base64
 from groq import Groq
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
-import edge_tts
-import asyncio
+from gtts import gTTS
 from audio_recorder_streamlit import audio_recorder
 import tempfile
 
@@ -18,15 +17,8 @@ st.set_page_config(
 )
 
 # --- SECURITY & SETUP ---
-# For local testing, replace this with your actual key if not using secrets
-groq_api_key = st.secrets.get("GROQ_API_KEY", None)
-        
-if not groq_api_key:
-    # Fallback for the user to input key if not found
-    groq_api_key = st.text_input("Enter Groq API Key:", type="password")
-    if not groq_api_key:
-        st.warning("Please provide an API Key to continue.")
-        st.stop()
+
+groq_api_key = os.getenv("GROQ_API_KEY") or st.secrets["GROQ_API_KEY"]
 
 client = Groq(api_key=groq_api_key)
 
@@ -176,6 +168,7 @@ def transcribe_audio(audio_bytes):
         os.unlink(temp_audio_path)
         return transcription
     except Exception as e:
+        st.error(f"Transcription error: {e}")
         return None
 
 def get_ai_response(text_input):
@@ -196,28 +189,17 @@ def get_ai_response(text_input):
     return response.content
 
 def text_to_speech(text):
-    """Convert text to speech using edge-tts with male Indian voice"""
-    async def generate_speech():
-        # Use a male Indian English voice
-        voice = "en-IN-PrabhatNeural"  # Male Indian voice
-        # Alternative options:
-        # "en-IN-PrabhatNeural" - Male Indian voice (confident)
-        # "en-US-AriaNeural" - Female US (if you want to test)
-        
-        communicate = edge_tts.Communicate(text, voice)
+    """Convert text to speech using Google Text-to-Speech"""
+    try:
+        # Use Indian English accent with natural speed
+        tts = gTTS(text=text, lang='en', tld='co.in', slow=False)
         
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as fp:
-            await communicate.save(fp.name)
+            tts.save(fp.name)
             return fp.name
-    
-    # Run the async function
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        audio_file = loop.run_until_complete(generate_speech())
-        return audio_file
-    finally:
-        loop.close()
+    except Exception as e:
+        st.error(f"Text-to-Speech error: {e}")
+        return None
 
 def autoplay_audio(file_path, ai_response, caption_placeholder):
     try:
@@ -311,7 +293,6 @@ with col2:
 
 # --- LOGIC FLOW ---
 
-
 # Check if the audio_done signal was received from client-side JS
 if st.query_params.get('audio_done') == 'true':
     # Reset the state when the audio finishes (signaled by client-side JS)
@@ -340,7 +321,6 @@ if st.query_params.get('audio_done') == 'true':
 # --- Original A, B, C, D Logic (only D needs adjustment) ---
 if audio_bytes and not st.session_state.is_ai_speaking:
     # A. Transcribe
-    # ... (Keep this part the same) ...
     st.session_state.caption = "🎧 Listening..."
     caption_placeholder.markdown(f'<div class="caption-box">{st.session_state.caption}</div>', unsafe_allow_html=True)
     
@@ -348,7 +328,6 @@ if audio_bytes and not st.session_state.is_ai_speaking:
     
     if user_text:
         # B. User Caption
-        # ... (Keep this part the same) ...
         st.session_state.caption = f"You: {user_text}"
         caption_placeholder.markdown(f'<div class="caption-box">{st.session_state.caption}</div>', unsafe_allow_html=True)
         
@@ -356,23 +335,24 @@ if audio_bytes and not st.session_state.is_ai_speaking:
         ai_response = get_ai_response(user_text)
         
         # D. Set AI speaking state and play audio
-        # The is_ai_speaking state is set inside autoplay_audio now.
-        
         try:
             audio_file = text_to_speech(ai_response)
-            time.sleep(0.5)  # Ensure file is ready
-            
-            # Play audio and show caption (which also injects the JS end-of-audio listener)
-            autoplay_audio(audio_file, ai_response, caption_placeholder)
-            
-            # Remove the duration-based calculation and audio_end_time assignment:
-            # words = len(ai_response.split())
-            # duration = max(5, words * 0.8 + 3) 
-            # st.session_state.audio_end_time = time.time() + duration 
+            if audio_file:
+                time.sleep(0.5)  # Ensure file is ready
+                
+                # Play audio and show caption (which also injects the JS end-of-audio listener)
+                autoplay_audio(audio_file, ai_response, caption_placeholder)
+            else:
+                st.session_state.is_ai_speaking = False
+                st.session_state.caption = "Audio generation failed. Please try again."
+                caption_placeholder.markdown(f'<div class="caption-box">{st.session_state.caption}</div>', unsafe_allow_html=True)
             
         except Exception as e:
-            st.error(f"Audio playbook error: {e}")
+            st.error(f"Audio error: {e}")
             st.session_state.is_ai_speaking = False
+    else:
+        st.session_state.caption = "Could not understand the audio. Please try again."
+        caption_placeholder.markdown(f'<div class="caption-box">{st.session_state.caption}</div>', unsafe_allow_html=True)
 
 # Auto-refresh while AI is speaking:
 # This is now only necessary to keep the orb animated and the 'AI is speaking' message visible
