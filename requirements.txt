@@ -3,8 +3,7 @@ langchain
 langchain-core
 langchain-groq
 groq
-edge-tts
+gtts
 audio-recorder-streamlit
 python-dotenv
-asyncio
 streamlit-mic-recorder
