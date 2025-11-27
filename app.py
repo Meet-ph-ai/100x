@@ -18,8 +18,14 @@ st.set_page_config(
 
 # --- SECURITY & SETUP ---
 
-groq_api_key = os.getenv("GROQ_API_KEY") or st.secrets["GROQ_API_KEY"]
+groq_api_key = st.secrets.get("GROQ_API_KEY", None)
 
+if not groq_api_key:
+    # Fallback for the user to input key if not found
+    groq_api_key = st.text_input("Enter Groq API Key:", type="password")
+    if not groq_api_key:
+        st.warning("Please provide an API Key to continue.")
+        st.stop()
 client = Groq(api_key=groq_api_key)
 
 # --- CANDIDATE BRAIN (DATA FROM CV) ---
