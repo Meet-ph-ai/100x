@@ -7,3 +7,5 @@ gtts
 audio-recorder-streamlit
 python-dotenv
 streamlit-mic-recorder
+flask 
+flask-cors
